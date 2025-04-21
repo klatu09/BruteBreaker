@@ -44,17 +44,17 @@ Other projects include:
 
 ## 🧪 Example Usage
 
-Enter your password: CQWEXQWEXQWERXX3214Xasdxasdexqwe
-Password Evaluation: 🟢 Strength: STRONG ✅ Great! Your password meets all recommended security practices.
+- Enter your password: CQWEXQWEXQWERXX3214Xasdxasdexqwe
+- Password Evaluation: 🟢 Strength: STRONG ✅ Great! Your password meets all recommended security practices.
 
 ## 👨‍💻 Author
 
 **K1atu**
-**Cybersecurity Enthusiast** • **Blue Team Focused** • **CTF Challenger**
-**📜 CompTIA Security+ Certified**
-🔗 Portfolio • LinkedIn 
+- **Cybersecurity Enthusiast** • **Blue Team Focused** • **CTF Challenger**
+- **📜 CompTIA Security+ Certified**
+- 🔗 Portfolio • LinkedIn 
 
 ## 📜 License
 
-This project is licensed under the MIT License.
-Use freely. Improve responsibly. Contribute boldly.
+- This project is licensed under the MIT License.
+- Use freely. Improve responsibly. Contribute boldly.
