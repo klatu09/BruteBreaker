@@ -45,3 +45,15 @@ Other projects include:
 ## 🧪 Example Usage
 Enter your password: CyberKnight2025!
 Password Evaluation: 🟢 Strength: STRONG ✅ Great! Your password meets all recommended security practices.
+
+## 👨‍💻 Author
+
+K1atu
+**Cybersecurity Enthusiast** • **Blue Team Focused** • **CTF Challenger**
+**📜 CompTIA Security+ Certified**
+🔗 Portfolio • LinkedIn 
+
+## 📜 License
+
+This project is licensed under the MIT License.
+Use freely. Improve responsibly. Contribute boldly.
