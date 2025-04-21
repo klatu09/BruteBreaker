@@ -43,3 +43,5 @@ Other projects include:
 ---
 
 ## 🧪 Example Usage
+Enter your password: CyberKnight2025!
+Password Evaluation: 🟢 Strength: STRONG ✅ Great! Your password meets all recommended security practices.
