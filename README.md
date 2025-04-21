@@ -43,12 +43,13 @@ Other projects include:
 ---
 
 ## 🧪 Example Usage
-Enter your password: CyberKnight2025!
+
+Enter your password: CQWEXQWEXQWERXX3214Xasdxasdexqwe
 Password Evaluation: 🟢 Strength: STRONG ✅ Great! Your password meets all recommended security practices.
 
 ## 👨‍💻 Author
 
-K1atu
+**K1atu**
 **Cybersecurity Enthusiast** • **Blue Team Focused** • **CTF Challenger**
 **📜 CompTIA Security+ Certified**
 🔗 Portfolio • LinkedIn 
