@@ -29,11 +29,11 @@ def check_password_strength(password):
     else:
         return "WEAK", "#ff0033", 30, "🔴 Weak sauce. Mix it up, hacker."
 
-# Generate strong password suggestion
-def generate_password():
-    chars = string.ascii_letters + string.digits + string.punctuation
-    password = ''.join(random.choice(chars) for i in range(12))
-    return password
+# Generate a pattern-based password suggestion
+def generate_password_suggestion(base_password):
+    patterns = [f"{base_password}01", f"{base_password}_02", f"{base_password}123", f"{base_password}_xyz", f"{base_password}!@#", f"{base_password}_abc"]
+    suggestion = random.choice(patterns)
+    return suggestion
 
 ## Brute Force Time Estimation (based on password strength)
 def calculate_crack_time(password):
@@ -90,7 +90,7 @@ def update_feedback(event=None):
 
     # Suggest new password if weak
     if strength == "WEAK":
-        suggestion = generate_password()
+        suggestion = generate_password_suggestion(pwd)
         suggestion_label.config(text=f"🔑 Suggested Strong Password: {suggestion}")
 
     # Show estimated time to crack
