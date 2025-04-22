@@ -1,14 +1,12 @@
 import re
 import tkinter as tk
 from tkinter import ttk
-from tkinter import messagebox
-import random
 import string
-import time
-import datetime
 import math
+import requests
+import hashlib
 
-# Password strength check
+# -------------------- Password Strength Checks -------------------- #
 def check_password_strength(password):
     score = 0
     if len(password) >= 8:
@@ -19,7 +17,7 @@ def check_password_strength(password):
         score += 1
     if re.search(r"\d", password):
         score += 1
-    if re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", password):
+    if re.search(r"[!@#$%^&*()_+\-=[\]{};':\"\\|,.<>\/?]", password):
         score += 1
 
     if score == 5:
@@ -29,57 +27,34 @@ def check_password_strength(password):
     else:
         return "WEAK", "#ff0033", 30, "🔴 Weak sauce. Mix it up, hacker."
 
-# Generate a pattern-based password suggestion
-def generate_password_suggestion(base_password):
-    patterns = [f"{base_password}01", f"{base_password}_02", f"{base_password}123", f"{base_password}_xyz", f"{base_password}!@#", f"{base_password}_abc"]
-    suggestion = random.choice(patterns)
-    return suggestion
+# -------------------- Entropy Meter -------------------- #
+def calculate_entropy(password):
+    char_set_size = sum([
+        len(string.ascii_lowercase) if any(c.islower() for c in password) else 0,
+        len(string.ascii_uppercase) if any(c.isupper() for c in password) else 0,
+        len(string.digits) if any(c.isdigit() for c in password) else 0,
+        len(string.punctuation) if any(c in string.punctuation for c in password) else 0
+    ])
+    return len(password) * math.log2(max(char_set_size, 1))
 
-## Brute Force Time Estimation (based on password strength)
-def calculate_crack_time(password):
-    # Brute force time simulation based on password complexity
-    # Let's assume the average attacker can try 1 million guesses per second.
+# -------------------- HIBP Integration -------------------- #
+def check_pwned(password):
+    sha1pwd = hashlib.sha1(password.encode('utf-8')).hexdigest().upper()
+    prefix = sha1pwd[:5]
+    suffix = sha1pwd[5:]
+    try:
+        res = requests.get(f"https://api.pwnedpasswords.com/range/{prefix}")
+        if res.status_code != 200:
+            return "❓ Could not verify breaches."
+        hashes = (line.split(":") for line in res.text.splitlines())
+        for h, count in hashes:
+            if h == suffix:
+                return f"☠️ Found in {count} breaches!"
+        return "✅ Not found in known breaches."
+    except:
+        return "❓ Network error checking breach."
 
-    # Character sets
-    lower_case = string.ascii_lowercase
-    upper_case = string.ascii_uppercase
-    digits = string.digits
-    symbols = string.punctuation
-    
-    # Determine password character set
-    char_set_size = 0
-    if any(c.islower() for c in password):
-        char_set_size += len(lower_case)
-    if any(c.isupper() for c in password):
-        char_set_size += len(upper_case)
-    if any(c.isdigit() for c in password):
-        char_set_size += len(digits)
-    if any(c in symbols for c in password):
-        char_set_size += len(symbols)
-
-    # Ensure char_set_size is at least 1 to avoid math domain error
-    if char_set_size == 0:
-        char_set_size = 1
-
-    # Calculate password entropy (number of possible combinations)
-    entropy = len(password) * math.log2(char_set_size)
-
-    # Time to crack (in seconds)
-    attempts_per_second = 10**6  # 1 million attempts per second
-    time_to_crack = (2 ** entropy) / attempts_per_second  # Time to crack in seconds
-
-    # Convert to a human-readable format (e.g., seconds, minutes, hours)
-    if time_to_crack < 60:
-        return f"{int(time_to_crack)} seconds"
-    elif time_to_crack < 3600:
-        return f"{int(time_to_crack // 60)} minutes"
-    elif time_to_crack < 86400:
-        return f"{int(time_to_crack // 3600)} hours"
-    else:
-        return f"{int(time_to_crack // 86400)} days"
-
-
-# Update feedback and suggestions
+# -------------------- Update Everything -------------------- #
 def update_feedback(event=None):
     pwd = entry.get()
     strength, color, percent, feedback = check_password_strength(pwd)
@@ -88,75 +63,83 @@ def update_feedback(event=None):
     strength_bar['value'] = percent
     style.configure("TProgressbar", troughcolor="#2c2c2c", background=color)
 
-    # Suggest new password if weak
-    if strength == "WEAK":
-        suggestion = generate_password_suggestion(pwd)
-        suggestion_label.config(text=f"🔑 Suggested Strong Password: {suggestion}")
+    # Terminal output
+    terminal_output.delete("1.0", tk.END)
+    terminal_output.insert(tk.END, f"[*] Analyzing password...\n")
+    terminal_output.insert(tk.END, f"[+] Length: {len(pwd)}\n")
+    terminal_output.insert(tk.END, f"[+] Entropy: {calculate_entropy(pwd):.2f} bits\n")
+    terminal_output.insert(tk.END, f"[+] Strength: {strength}\n")
+    terminal_output.insert(tk.END, f"[+] Feedback: {feedback}\n")
 
-    # Show estimated time to crack
-    time_to_crack = calculate_crack_time(pwd)
-    crack_time_label.config(text=f"Estimated time to brute-force: {time_to_crack}")
+    # HIBP Check
+    if len(pwd) > 4:  # Only check passwords longer than 4 characters
+        hibp_result = check_pwned(pwd)
+        terminal_output.insert(tk.END, f"[!] HIBP: {hibp_result}\n")
+        feedback_label.config(text=f"{feedback}\n{hibp_result}")
 
-# Toggle password visibility
+    # Update ring canvas
+    ring_canvas.delete("all")
+    draw_entropy_ring(ring_canvas, percent, color)
+
+# -------------------- Visual Ring -------------------- #
+def draw_entropy_ring(canvas, percent, color):
+    angle = int(360 * percent / 100)
+    glow_color = color if percent == 100 else ""
+    canvas.create_oval(10, 10, 110, 110, outline="#333", width=8)
+    canvas.create_arc(10, 10, 110, 110, start=90, extent=-angle, outline=color, width=8, style="arc")
+    if percent == 100:
+        canvas.create_oval(14, 14, 106, 106, outline=color, width=2)
+
+# -------------------- Toggle Password -------------------- #
 def toggle_password():
-    if entry.cget("show") == "":
-        entry.config(show="*")
-        toggle_btn.config(text="👁️")
-    else:
+    if entry.cget("show") == "*":
         entry.config(show="")
-        toggle_btn.config(text="🙈")
+        toggle_btn.config(text="Hide Password")
+    else:
+        entry.config(show="*")
+        toggle_btn.config(text="Show Password")
 
-# GUI Setup
+# -------------------- GUI Setup -------------------- #
 app = tk.Tk()
 app.title("BruteBreaker - Password Analyzer")
-app.geometry("480x430")
-app.resizable(False, False)
 app.configure(bg="#0d0d0d")
-
+app.geometry("460x620")
+app.resizable(False, False)
 style = ttk.Style()
-style.theme_use("default")
-style.configure("TProgressbar", thickness=20, troughcolor="#2c2c2c", background="#00ff00")
+style.theme_use('default')
 
-# Title
-title = tk.Label(app, text="🧠 BruteBreaker", font=("Consolas", 18, "bold"), bg="#0d0d0d", fg="#00fff7")
-subtitle = tk.Label(app, text="Real-time password analyzer by K1atu", font=("Consolas", 10), bg="#0d0d0d", fg="#555")
-title.pack(pady=(12, 0))
-subtitle.pack(pady=(0, 12))
+main_frame = tk.Frame(app, bg="#0d0d0d")
+main_frame.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
 
-# Entry frame (for toggle icon beside input)
-entry_frame = tk.Frame(app, bg="#0d0d0d")
-entry_frame.pack()
+title_label = tk.Label(main_frame, text="🧠 BruteBreaker", font=("Consolas", 18, "bold"), bg="#0d0d0d", fg="#00fff7")
+title_label.pack(pady=(10, 5))
 
-entry = tk.Entry(entry_frame, show="*", font=("Consolas", 12), width=30, bd=2, fg="#00ffcc", bg="#1c1c1c", insertbackground="#00ffcc")
-entry.pack(side="left", padx=(10, 5))
+subtitle_label = tk.Label(main_frame, text="Live password analysis + HIBP breach check", font=("Consolas", 10), bg="#0d0d0d", fg="#aaa")
+subtitle_label.pack(pady=(0, 20))
+
+entry = tk.Entry(main_frame, show="*", font=("Consolas", 12), width=30, bd=2, fg="#00ffcc", bg="#1c1c1c", insertbackground="#00ffcc")
+entry.pack(pady=(0, 10))
 entry.bind("<KeyRelease>", update_feedback)
 
-toggle_btn = tk.Button(entry_frame, text="👁️", font=("Consolas", 10), command=toggle_password, bg="#1c1c1c", fg="#00ffcc", bd=0, activebackground="#333")
-toggle_btn.pack(side="left")
+toggle_btn = tk.Button(main_frame, text="Show Password", font=("Consolas", 10), command=toggle_password, bg="#1c1c1c", fg="#00ffcc", bd=0)
+toggle_btn.pack(pady=(0, 10))
 
-# Strength bar
-strength_bar = ttk.Progressbar(app, length=300, mode='determinate')
-strength_bar.pack(pady=20)
+strength_bar = ttk.Progressbar(main_frame, length=300, mode='determinate')
+strength_bar.pack(pady=(10, 10))
 
-# Result
-result_label = tk.Label(app, text="", font=("Consolas", 14, "bold"), bg="#0d0d0d")
-result_label.pack()
+result_label = tk.Label(main_frame, text="", font=("Consolas", 14, "bold"), bg="#0d0d0d")
+result_label.pack(pady=(10, 5))
 
-# Feedback
-feedback_label = tk.Label(app, text="", font=("Consolas", 10), wraplength=360, bg="#0d0d0d", fg="#aaaaaa", justify="center")
-feedback_label.pack(pady=10)
+feedback_label = tk.Label(main_frame, text="", font=("Consolas", 10), wraplength=360, bg="#0d0d0d", fg="#aaaaaa", justify="center")
+feedback_label.pack(pady=(5, 10))
 
-# Suggested password
-suggestion_label = tk.Label(app, text="", font=("Consolas", 10, "italic"), wraplength=360, bg="#0d0d0d", fg="#00cc00", justify="center")
-suggestion_label.pack(pady=10)
+ring_canvas = tk.Canvas(main_frame, width=120, height=120, bg="#0d0d0d", highlightthickness=0)
+ring_canvas.pack(pady=5)
 
-# Time to crack estimate
-crack_time_label = tk.Label(app, text="", font=("Consolas", 10, "italic"), wraplength=360, bg="#0d0d0d", fg="#ff6347", justify="center")
-crack_time_label.pack(pady=10)
+terminal_output = tk.Text(main_frame, height=10, width=55, bg="#111", fg="#0f0", font=("Consolas", 9), border=0)
+terminal_output.pack(pady=10)
 
-# Footer
-footer = tk.Label(app, text="🔒 Stay Secure, Stay Sharp. #BruteBreaker", font=("Consolas", 9), bg="#0d0d0d", fg="#444")
-footer.pack(side="bottom", pady=5)
+footer = tk.Label(main_frame, text="🔒 Stay Secure, Stay Sharp. #BruteBreaker", font=("Consolas", 9), bg="#0d0d0d", fg="#444")
+footer.pack(pady=(5, 5))
 
-# Run app
 app.mainloop()
