@@ -29,13 +29,37 @@ def check_password_strength(password):
 
 # -------------------- Entropy Meter -------------------- #
 def calculate_entropy(password):
-    char_set_size = sum([
+    char_set_size = sum([ 
         len(string.ascii_lowercase) if any(c.islower() for c in password) else 0,
         len(string.ascii_uppercase) if any(c.isupper() for c in password) else 0,
         len(string.digits) if any(c.isdigit() for c in password) else 0,
         len(string.punctuation) if any(c in string.punctuation for c in password) else 0
     ])
     return len(password) * math.log2(max(char_set_size, 1))
+
+# -------------------- Crack Time Estimator -------------------- #
+def estimate_crack_time(password):
+    entropy = calculate_entropy(password)
+    # Estimate the number of guesses per second (1 million guesses per second as an example)
+    guesses_per_second = 10**6
+    # Total number of guesses (2^entropy)
+    total_guesses = 2 ** entropy
+    # Time in seconds to crack the password
+    time_seconds = total_guesses / guesses_per_second
+    
+    # Convert time to years, months, days, hours, minutes, and seconds
+    years = time_seconds // (60 * 60 * 24 * 365.25)
+    time_seconds %= (60 * 60 * 24 * 365.25)
+    months = time_seconds // (60 * 60 * 24 * 30)
+    time_seconds %= (60 * 60 * 24 * 30)
+    days = time_seconds // (60 * 60 * 24)
+    time_seconds %= (60 * 60 * 24)
+    hours = time_seconds // (60 * 60)
+    time_seconds %= (60 * 60)
+    minutes = time_seconds // 60
+    seconds = time_seconds % 60
+    
+    return f"{int(years)} years, {int(months)} months, {int(days)} days, {int(hours)} hours, {int(minutes)} minutes, {int(seconds)} seconds"
 
 # -------------------- HIBP Integration -------------------- #
 def check_pwned(password):
@@ -70,6 +94,10 @@ def update_feedback(event=None):
     terminal_output.insert(tk.END, f"[+] Entropy: {calculate_entropy(pwd):.2f} bits\n")
     terminal_output.insert(tk.END, f"[+] Strength: {strength}\n")
     terminal_output.insert(tk.END, f"[+] Feedback: {feedback}\n")
+
+    # Crack time estimate
+    crack_time = estimate_crack_time(pwd)
+    terminal_output.insert(tk.END, f"[+] Estimated crack time: {crack_time}\n")
 
     # HIBP Check
     if len(pwd) > 4:  # Only check passwords longer than 4 characters
